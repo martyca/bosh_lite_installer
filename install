@@ -11,48 +11,69 @@
 
 # -----------------------------------------------------------------------------------------
 
+# functions
+
+echoblue () {
+  printf "\e[34m$1\e[0m"
+  echo
+}
+
+
 # #############################
 # ##                         ##
 # ##  Setting up workspace.  ##
 # ##                         ##
 # #############################
+basedir=$(pwd)
+workspace="$basedir/workspace"
+vbox="$workspace/vbox"
+boshdeployment="$workspace/bosh-deployment"
+creds="$vbox/creds.yml"
+# dirs
 
-if [ -d "workspace" ]
+if [ -d "$workspace" ]
 then
   read -p "This script will reset your entire bosh environment, Press any key to proceed."
-  cd ./workspace
-  if [ -d "vbox" ]
+  if [ -d "$vbox" ]
   then
-    echo "Config folder found, cleaning."
-    rm -f ./vbox/*
+    echoblue "Config folder found, cleaning."
+    rm -f "$vbox"/*
   else
-    echo "No config folder found, creating new one."
-    mkdir ./vbox
+    echoblue "No config folder found, creating new one."
+    mkdir -p "$vbox"
   fi
-
-  if [ -d "bosh-deployment" ]
+  if [ -d "$boshdeployment" ]
   then
-    echo "Updating local bosh deployment repository."
-    cd ./bosh-deployment
+    echoblue "Updating local bosh deployment repository."
+    cd "$boshdeployment"
     git reset --hard
     git pull
   else
-    echo "No local bosh deployment repository found, cloning a new one."
+    echoblue "No local bosh deployment repository found, cloning a new one."
+    cd "$workspace"
     git clone https://github.com/cloudfoundry/bosh-deployment
   fi
 else
-  echo "No prior workspace found, creating new workspace."
-  mkdir -p ./workspace/vbox
-  cd ./workspace
-  echo "Cloning from bosh deployment repository."
+  echoblue "No prior workspace found, creating new workspace."
+  mkdir -p "$vbox"
+  cd "$workspace"
+  echoblue "Cloning from bosh deployment repository."
   git clone https://github.com/cloudfoundry/bosh-deployment
 fi
+
+# cleaning env vars
+unset BOSH_ENVIRONMENT
+unset BOSH_CLIENT
+unset BOSH_CLIENT_SECRET
+bosh logout
 
 # ###########################################
 # ##                                       ##
 # ##  Deploying bosh-lite on virtual-box.  ##
 # ##                                       ##
 # ###########################################
+echoblue "Starting deployment."
+cd $workspace
 
 bosh create-env bosh-deployment/bosh.yml \
   --state vbox/state.json \
@@ -63,19 +84,15 @@ bosh create-env bosh-deployment/bosh.yml \
   -o bosh-deployment/jumpbox-user.yml \
   -o bosh-deployment/uaa.yml \
   -o bosh-deployment/credhub.yml \
-  --vars-store vbox/creds.yml \
+  --vars-store $creds \
   -v director_name="Bosh-Lite-Director" \
   -v internal_ip=192.168.50.6 \
   -v internal_gw=192.168.50.1 \
   -v internal_cidr=192.168.50.0/24 \
   -v outbound_network_name=NatNetwork
 
-bosh -e 192.168.50.6 alias-env vbox --ca-cert <(bosh int vbox/creds.yml --path /director_ssl/ca)
-
-export BOSH_ENVIRONMENT=vbox
-export BOSH_CLIENT=admin
-export BOSH_CLIENT_SECRET=$(bosh int ./vbox/creds.yml --path /admin_password)
-
-bosh login
-bosh env
-
+bosh -e 192.168.50.6 alias-env vbox --ca-cert <(bosh int $creds --path /director_ssl/ca)
+printf "\e[92mDeployment successful, please log in to your bosh environment using the following settings:\e[0m\n"
+printf "\e[34mCommand:  \e[93mbosh login -e vbox\e[0m\n"
+printf "\e[34muser:     \e[93madmin\e[0m\n"
+printf "\e[34mpassword: \e[93m$(bosh int $creds --path /admin_password)\e[0m\n"

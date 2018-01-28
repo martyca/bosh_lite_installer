@@ -30,6 +30,14 @@ I am actually considering having the script install it if you dont have it yet, 
 Get it here:
 https://bosh.io/docs/cli-v2.html#install
 
+## Sources.
+bosh.io documentation:
+http://bosh.io/docs
+CloudFoundry bosh docs:
+https://www.cloudfoundry.org/bosh/
+Dr Nic's Ultimate guide to bosh:
+https://ultimateguidetobosh.com
+
 ## Todo.
 * Ensure the script works on both macOS and Linux.
 * work with vboxmanage to list and remove old vm's when needed.
