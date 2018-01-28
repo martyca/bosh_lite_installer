@@ -1,3 +1,6 @@
 # bosh workspace.
 workspace/
 
+# vim
+*.swp
+
