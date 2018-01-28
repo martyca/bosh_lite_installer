@@ -14,7 +14,7 @@ I would advise you to use this script once you are comfortable installing bosh-l
 ### Operating System.
 Im developing this script on my macbook, there for it currently works on macOS, it should work on linux but your milage may vary.
 I am planning on making this fully linux compatible.
-Windows, meh... I might take a look at the "subsystem for linux" thingy on windows.
+Windows, meh... I might take a look at the "subsystem for linux" thingy but dont get your hopes up.
 ### Tools.
 #### Git.
 Seeing as you are probably reading this on github or from a cloned repo, i would be very surprised if you didnt have git installed already.
