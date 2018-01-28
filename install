@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# bosh lite installer.
+# created by Martin Caarels.
+# 2018
+
+# todo:
+# check for binaries:[git, bosh, vboxmanage, etc] install or show url when not found.
+# list and remove bosh vm's through vboxmanage
+# check operating system and manage script accordingly.
+
+# -----------------------------------------------------------------------------------------
+
+# #############################
+# ##                         ##
+# ##  Setting up workspace.  ##
+# ##                         ##
+# #############################
+
+if [ -d "workspace" ]
+then
+  read -p "This script will reset your entire bosh environment, Press any key to proceed."
+  cd ./workspace
+  if [ -d "vbox" ]
+  then
+    echo "Config folder found, cleaning."
+    rm -f ./vbox/*
+  else
+    echo "No config folder found, creating new one."
+    mkdir ./vbox
+  fi
+
+  if [ -d "bosh-deployment" ]
+  then
+    echo "Updating local bosh deployment repository."
+    cd ./bosh-deployment
+    git reset --hard
+    git pull
+  else
+    echo "No local bosh deployment repository found, cloning a new one."
+    git clone https://github.com/cloudfoundry/bosh-deployment
+  fi
+else
+  echo "No prior workspace found, creating new workspace."
+  mkdir -p ./workspace/vbox
+  cd ./workspace
+  echo "Cloning from bosh deployment repository."
+  git clone https://github.com/cloudfoundry/bosh-deployment
+fi
+
+# ###########################################
+# ##                                       ##
+# ##  Deploying bosh-lite on virtual-box.  ##
+# ##                                       ##
+# ###########################################
+
+bosh create-env bosh-deployment/bosh.yml \
+  --state vbox/state.json \
+  -o bosh-deployment/virtualbox/cpi.yml \
+  -o bosh-deployment/virtualbox/outbound-network.yml \
+  -o bosh-deployment/bosh-lite.yml \
+  -o bosh-deployment/bosh-lite-runc.yml \
+  -o bosh-deployment/jumpbox-user.yml \
+  -o bosh-deployment/uaa.yml \
+  -o bosh-deployment/credhub.yml \
+  --vars-store vbox/creds.yml \
+  -v director_name="Bosh-Lite-Director" \
+  -v internal_ip=192.168.50.6 \
+  -v internal_gw=192.168.50.1 \
+  -v internal_cidr=192.168.50.0/24 \
+  -v outbound_network_name=NatNetwork
+
+bosh -e 192.168.50.6 alias-env vbox --ca-cert <(bosh int vbox/creds.yml --path /director_ssl/ca)
+
+export BOSH_ENVIRONMENT=vbox
+export BOSH_CLIENT=admin
+export BOSH_CLIENT_SECRET=$(bosh int ./vbox/creds.yml --path /admin_password)
+
+bosh login
+bosh env
+
