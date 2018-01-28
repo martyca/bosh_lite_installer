@@ -12,11 +12,45 @@
 # -----------------------------------------------------------------------------------------
 
 # functions
-
 echoblue () {
   printf "\e[34m$1\e[0m"
   echo
 }
+
+getSCs () {
+  IFS=$'\n'
+  for i in $(vboxmanage list vms)
+  do
+    echo $i | sed 's/ .*//; s/\"//g' | grep -E "^sc-.{8}-.{4}-.{4}-.{4}-.{12}$" > /dev/null
+    if [ $? == 0 ]
+    then
+      echo $i | sed 's/.* //'
+    fi
+  done
+}
+
+getVMs () {
+  IFS=$'\n'
+  for i in $(vboxmanage list vms)
+  do
+    echo $i | sed 's/ .*//; s/\"//g' | grep -E "^vm-.{8}-.{4}-.{4}-.{4}-.{12}$" > /dev/null
+    if [ $? == 0 ]
+    then
+      echo $i | sed 's/.* //'
+    fi
+  done
+}
+
+powerOffVM () {
+  echoblue "Powering off VM."
+  vboxmanage controlvm $1 poweroff > /dev/null
+}
+
+deleteVM () {
+  echoblue "Deleting VM."
+  vboxmanage unregistervm $1 -delete > /dev/null
+}
+
 
 
 # #############################
@@ -24,16 +58,31 @@ echoblue () {
 # ##  Setting up workspace.  ##
 # ##                         ##
 # #############################
+
 basedir=$(pwd)
 workspace="$basedir/workspace"
 vbox="$workspace/vbox"
 boshdeployment="$workspace/bosh-deployment"
 creds="$vbox/creds.yml"
-# dirs
 
+
+
+# dirs
 if [ -d "$workspace" ]
 then
-  read -p "This script will reset your entire bosh environment, Press any key to proceed."
+  echoblue "This script will reset your bosh environment and delete all bosh vm's, Press any key to proceed or ctrl+c to abort."
+  read -p ""
+  # delete old bosh vm's
+  for i in $(getVMs)
+  do
+    echo $i
+    powerOffVM $i
+    deleteVM $i
+  done
+  for i in $(getSCs)
+  do
+    deleteVM $i
+  done
   if [ -d "$vbox" ]
   then
     echoblue "Config folder found, cleaning."
@@ -73,6 +122,7 @@ bosh logout
 # ##                                       ##
 # ###########################################
 echoblue "Starting deployment."
+bosh logout
 cd $workspace
 
 bosh create-env bosh-deployment/bosh.yml \

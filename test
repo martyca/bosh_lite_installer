@@ -1,0 +1,31 @@
+#!/bin/bash
+
+getVMs () {
+  IFS=$'\n'
+  for i in $(vboxmanage list vms)
+  do
+    echo $i | sed 's/ .*//; s/\"//g' | grep -E "(^sc|vm)-.{8}-.{4}-.{4}-.{4}-.{12}$" > /dev/null
+    if [ $? == 0 ]
+    then
+      echo $i | sed 's/.* //' 
+    fi
+  done
+}
+
+powerOffVM () {
+  echo "Powering off VM."
+  vboxmanage controlvm $1 poweroff > /dev/null
+}
+
+deleteVM () {
+  echo "Deleting VM."
+  vboxmanage unregistervm $1 -delete > /dev/null
+}
+
+
+for i in $(getVMs)
+do
+  echo $i
+  powerOffVM $i
+  deleteVM $i
+done
