@@ -40,5 +40,5 @@ https://ultimateguidetobosh.com
 
 ## Todo.
 * Ensure the script works on both macOS and Linux.
-* work with vboxmanage to list and remove old vm's when needed.
+* ~~work with vboxmanage to list and remove old vm's when needed.
 * check for binaries and install or advise where to acquire.
