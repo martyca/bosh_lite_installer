@@ -30,6 +30,11 @@ I am actually considering having the script install it if you dont have it yet, 
 Get it here:
 https://bosh.io/docs/cli-v2.html#install
 
+## Usage.
+Clone this repository to a folder of your choosing, execute install.
+On a new system it will simply setup bosh-lite on virtualbox.
+When run again it will clean your bosh environment and set up a "clean" one.
+
 ## Sources.
 bosh.io documentation:
 http://bosh.io/docs
